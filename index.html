@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration | Antartika DragRace</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+    <div class="main-container">
+        
+        <div class="glass-card">
+            <h1>ANTARTIKA<br>DRAGRACE</h1>
+            <form id="regForm">
+                <div class="form-group">
+                    <input type="text" id="discord" placeholder="NAMA DISCORD" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="roblox" placeholder="USERNAME ROBLOX" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="carName" placeholder="NAMA MOBIL" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <select id="woc">
+                        <option value="BELI">WOC: BELI</option>
+                        <option value="IMPORT">WOC: IMPORT</option>
+                    </select>
+                    <input type="number" id="tris" placeholder="TRIS" required>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>UPLOAD 5 FOTO MOBIL (WAJIB):</label>
+                    <input type="file" id="photos" multiple accept="image/*" required>
+                </div>
+                <button type="submit" class="btn-submit" id="submitBtn">DAFTAR & DOWNLOAD</button>
+            </form>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <div id="ticketArea">
+                <div class="header-red">
+                    <span class="header-text">ANTARTIKA DRAG RACE</span>
+                </div>
+                
+                <div id="pNumber" class="number-display">00</div>
+
+                <div class="info-bottom">
+                    <div class="data-row">
+                        <span style="color: #666;">DISCORD:</span> <span id="pDiscord" class="val">---</span>
+                    </div>
+                    <div class="data-row">
+                        <span style="color: #666;">ROBLOX:</span> <span id="pRoblox" class="val">---</span>
+                    </div>
+                    <div class="data-row">
+                        <span style="color: #666;">CAR:</span> <span id="pCar" class="val">---</span>
+                    </div>
+                </div>
+            </div>
+            <p style="font-size: 10px; color: #444; margin-top: 15px; font-weight: bold;">AUTOMATIC LOGGING SYSTEM ACTIVE</p>
+        </div>
+
+    </div>
+
+    <script>
+        // 1. MASUKKAN URL WEBHOOK DISCORD KAMU DISINI
+        const DISCORD_WEBHOOK_URL = "MASUKKAN_URL_WEBHOOK_DISCORD_KAMU";
+
+        let counter = localStorage.getItem('antartika_v3_no') || 0;
+
+        document.getElementById('regForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const photoInput = document.getElementById('photos');
+            const files = photoInput.files;
+
+            if(files.length !== 5) {
+                alert("Anda harus mengunggah tepat 5 foto mobil!");
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = "SEDANG MENGIRIM DATA...";
+            btn.disabled = true;
+
+            // Update Counter & UI
+            counter = parseInt(counter) + 1;
+            localStorage.setItem('antartika_v3_no', counter);
+            const formattedNo = counter.toString().padStart(2, '0');
+
+            const data = {
+                discord: document.getElementById('discord').value,
+                roblox: document.getElementById('roblox').value,
+                car: document.getElementById('carName').value,
+                woc: document.getElementById('woc').value,
+                tris: document.getElementById('tris').value
+            };
+
+            document.getElementById('pNumber').innerText = formattedNo;
+            document.getElementById('pDiscord').innerText = data.discord;
+            document.getElementById('pRoblox').innerText = data.roblox;
+            document.getElementById('pCar').innerText = data.car;
+
+            // 2. KIRIM LOG KE DISCORD (Data + 5 Gambar)
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append(`file${i}`, files[i]);
+            }
+
+            const embed = {
+                title: "🏁 PENDAFTARAN BARU: NO " + formattedNo,
+                color: 16711680,
+                fields: [
+                    { name: "Discord", value: data.discord, inline: true },
+                    { name: "Roblox", value: data.roblox, inline: true },
+                    { name: "Mobil", value: data.car, inline: false },
+                    { name: "WOC / Tris", value: `${data.woc} / ${data.tris}`, inline: true }
+                ],
+                image: { url: "attachment://file0" }, // Munculkan foto pertama sebagai preview
+                timestamp: new Date()
+            };
+
+            formData.append('payload_json', JSON.stringify({ embeds: [embed] }));
+
+            try {
+                await fetch(DISCORD_WEBHOOK_URL, { method: 'POST', body: formData });
+            } catch (err) {
+                console.error("Gagal mengirim log ke Discord.");
+            }
+
+            // 3. GENERATE KARTU & DOWNLOAD
+            setTimeout(() => {
+                html2canvas(document.querySelector("#ticketArea"), {
+                    scale: 3, // Hasil gambar tajam
+                    backgroundColor: "#000000"
+                }).then(canvas => {
+                    const img = canvas.toDataURL("image/png");
+                    const link = document.createElement('a');
+                    link.download = `Antartika_No_${formattedNo}.png`;
+                    link.href = img;
+                    link.click();
+                    
+                    btn.innerText = "BERHASIL DAFTAR!";
+                    setTimeout(() => {
+                        btn.innerText = "DAFTAR & DOWNLOAD";
+                        btn.disabled = false;
+                    }, 2000);
+                });
+            }, 800);
+        });
+    </script>
+</body>
+</html>
